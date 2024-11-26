@@ -1,0 +1,9 @@
+{
+    "model": "lys.json",
+    "substrate": "EX_glc_e_reverse",
+    "biomass": "CG_biomass_cgl_ATCC13032",
+    "product": "EX_ile_L_e",
+    "taskname": "optforce",
+    "mode": "SET",
+    "oxygenstate": "aerobic"
+}
