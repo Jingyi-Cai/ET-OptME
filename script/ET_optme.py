@@ -1,7 +1,7 @@
 import sys
 sys.path.append('/home/sun/ETGEMS-10.20/')
-import ETGEMs_function_protain as etgf
-from ETGEMs_function_protain import *
+import script.pyomo_solving as etgf
+from script.pyomo_solving import *
 import pandas as pd
 import cobra
 import gurobipy
@@ -14,10 +14,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import re
 
-
-
-# 计算细胞生长
-# 计算细胞生长
+# Calculate cell growth
 def calculate_biomass(Concretemodel_Need_Data,inputdic,model,path_strain):
     """Computational Modeling of Cell product in Four Modes
 
@@ -42,69 +39,68 @@ def calculate_biomass(Concretemodel_Need_Data,inputdic,model,path_strain):
     obj_target='maximize'
     B_value1 = 'None'
     totalE = 'None'
-    #计量学模型
+    # stoichiometric model
     if inputdic['mode'] == 'S':
-        EcoECM_FBA_protainmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-        v0_biomass=EcoECM_FBA_protainmodel.obj()
-        print(f"maximum growth rate value is: {EcoECM_FBA_protainmodel.obj()}(mmol/gDW/h)")
-        constr_coeff['fix_reactions'][inputdic['substrate']]=[value(EcoECM_FBA_protainmodel.reaction[inputdic['substrate']]),np.inf]
-        constr_coeff['fix_reactions'][inputdic['biomass']]=[value(EcoECM_FBA_protainmodel.reaction[inputdic['biomass']]),np.inf]
-        EcoECM_PFBA_protainmodel_wild=FBA_template2(set_obj_V_value=True,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_PFBA_protainmodel_wild,'gurobi')
-        EcoECM_PFBA_protainmodel_wild.obj()
-        bio=showflux(EcoECM_PFBA_protainmodel_wild)
-    #酶模型
+        EcoECM_FBA_proteinmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+        v0_biomass=EcoECM_FBA_proteinmodel.obj()
+        print(f"maximum growth rate value is: {EcoECM_FBA_proteinmodel.obj()}(mmol/gDW/h)")
+        constr_coeff['fix_reactions'][inputdic['substrate']]=[value(EcoECM_FBA_proteinmodel.reaction[inputdic['substrate']]),np.inf]
+        constr_coeff['fix_reactions'][inputdic['biomass']]=[value(EcoECM_FBA_proteinmodel.reaction[inputdic['biomass']]),np.inf]
+        EcoECM_PFBA_proteinmodel_wild=FBA_template2(set_obj_V_value=True,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_PFBA_proteinmodel_wild,'gurobi')
+        EcoECM_PFBA_proteinmodel_wild.obj()
+
+    # enzyme constrained model
     if inputdic['mode'] == 'SE':
         if path_strain == 'iCW':
             Concretemodel_Need_Data['E_total']=0.56* np.mean([0.45311986236929197,0.4622348377433211,0.4600801040374112])
         if path_strain == 'iML1515':
             Concretemodel_Need_Data['E_total']=0.228
-        EcoECM_FBA_protainmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-        v0_biomass=EcoECM_FBA_protainmodel.obj()
-        print(f"maximum growth rate value is: {EcoECM_FBA_protainmodel.obj()}(mmol/gDW/h)")
+        EcoECM_FBA_proteinmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+        v0_biomass=EcoECM_FBA_proteinmodel.obj()
+        print(f"maximum growth rate value is: {EcoECM_FBA_proteinmodel.obj()}(mmol/gDW/h)")
         # pfba
-        constr_coeff['fix_reactions'][inputdic['substrate']]=[value(EcoECM_FBA_protainmodel.reaction[inputdic['substrate']]),np.inf]
-        constr_coeff['fix_reactions'][inputdic['biomass']]=[value(EcoECM_FBA_protainmodel.reaction[inputdic['biomass']]),np.inf]
+        constr_coeff['fix_reactions'][inputdic['substrate']]=[value(EcoECM_FBA_proteinmodel.reaction[inputdic['substrate']]),np.inf]
+        constr_coeff['fix_reactions'][inputdic['biomass']]=[value(EcoECM_FBA_proteinmodel.reaction[inputdic['biomass']]),np.inf]
         constr_coeff['fix_E_total']=True
-        EcoECM_PFBA_protainmodel_wild=FBA_template2(set_obj_V_value=True,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_PFBA_protainmodel_wild,'gurobi')
-        EcoECM_PFBA_protainmodel_wild.obj()
-        bio=showflux(EcoECM_PFBA_protainmodel_wild)
-    # mini enzyme
-    # mini enzyme
+        EcoECM_PFBA_proteinmodel_wild=FBA_template2(set_obj_V_value=True,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_PFBA_proteinmodel_wild,'gurobi')
+        EcoECM_PFBA_proteinmodel_wild.obj()
+        bio=showflux(EcoECM_PFBA_proteinmodel_wild)
+    # min enzyme
         constr_coeff={}
         constr_coeff['fix_reactions']={}
         constr_coeff['substrate_constrain']=(inputdic['substrate'],objvalue2)
         constr_coeff['biomass_constrain']=(inputdic['biomass'],v0_biomass*0.95) 
         obj_name=inputdic['biomass']
         obj_target='minimize'
-        EcoECM_FBA_protainmodel=FBA_template2(set_obj_sum_e=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-        totalE=EcoECM_FBA_protainmodel.obj()
-        print(f"minimizing the total enzyme concentration  is: {EcoECM_FBA_protainmodel.obj()}((mmol/gDW)")
-        print(EcoECM_FBA_protainmodel.obj())
-    # 热力学模型
+        EcoECM_FBA_proteinmodel=FBA_template2(set_obj_sum_e=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+        totalE=EcoECM_FBA_proteinmodel.obj()
+        print(f"minimizing the total enzyme concentration  is: {EcoECM_FBA_proteinmodel.obj()}((mmol/gDW)")
+        print(EcoECM_FBA_proteinmodel.obj())
+    # thermo constrained model
     if inputdic['mode'] == 'ST':
         Concretemodel_Need_Data['B_value']=0
         Concretemodel_Need_Data['K_value']=1249
-        EcoECM_FBA_protainmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-        v0_biomass=EcoECM_FBA_protainmodel.obj()
-        print(f"maximum growth rate value is: {EcoECM_FBA_protainmodel.obj()}(mmol/gDW/h)")
-        constr_coeff['fix_reactions'][inputdic['biomass']]=[value(EcoECM_FBA_protainmodel.reaction[inputdic['biomass']]),np.inf]
-        EcoECM_FBA_protainmodel=FBA_template2(set_obj_B_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-        B_value1=EcoECM_FBA_protainmodel.obj()
-        print(f"The maximum thermodynamic driving force value is : {EcoECM_FBA_protainmodel.obj()}")
-        constr_coeff['fix_reactions'][inputdic['substrate']]=[value(EcoECM_FBA_protainmodel.reaction[inputdic['substrate']]),np.inf]
-        constr_coeff['fix_reactions'][inputdic['biomass']]=[value(EcoECM_FBA_protainmodel.reaction[inputdic['biomass']]),np.inf]
-        EcoECM_PFBA_protainmodel_wild=FBA_template2(set_obj_V_value=True,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_PFBA_protainmodel_wild,'gurobi')
-        EcoECM_PFBA_protainmodel_wild.obj()
-        bio=showflux(EcoECM_PFBA_protainmodel_wild)        
-    # 酶热模型
+        EcoECM_FBA_proteinmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+        v0_biomass=EcoECM_FBA_proteinmodel.obj()
+        print(f"maximum growth rate value is: {EcoECM_FBA_proteinmodel.obj()}(mmol/gDW/h)")
+        constr_coeff['fix_reactions'][inputdic['biomass']]=[value(EcoECM_FBA_proteinmodel.reaction[inputdic['biomass']]),np.inf]
+        EcoECM_FBA_proteinmodel=FBA_template2(set_obj_B_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+        B_value1=EcoECM_FBA_proteinmodel.obj()
+        print(f"The maximum thermodynamic driving force value is : {EcoECM_FBA_proteinmodel.obj()}")
+        constr_coeff['fix_reactions'][inputdic['substrate']]=[value(EcoECM_FBA_proteinmodel.reaction[inputdic['substrate']]),np.inf]
+        constr_coeff['fix_reactions'][inputdic['biomass']]=[value(EcoECM_FBA_proteinmodel.reaction[inputdic['biomass']]),np.inf]
+        EcoECM_PFBA_proteinmodel_wild=FBA_template2(set_obj_V_value=True,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_PFBA_proteinmodel_wild,'gurobi')
+        EcoECM_PFBA_proteinmodel_wild.obj()
+        bio=showflux(EcoECM_PFBA_proteinmodel_wild)        
+    # enzyme thermo constrained model
     if inputdic['mode'] == 'SET':
         if path_strain == 'iCW':
             Concretemodel_Need_Data['E_total']=0.56* np.mean([0.45311986236929197,0.4622348377433211,0.4600801040374112])
@@ -112,22 +108,22 @@ def calculate_biomass(Concretemodel_Need_Data,inputdic,model,path_strain):
             Concretemodel_Need_Data['E_total']=0.228
         Concretemodel_Need_Data['B_value']=0
         Concretemodel_Need_Data['K_value']=1249
-        EcoECM_FBA_protainmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-        v0_biomass=EcoECM_FBA_protainmodel.obj()
-        print(f"maximum growth rate value is: {EcoECM_FBA_protainmodel.obj()}(mmol/gDW/h)")
-        constr_coeff['fix_reactions'][inputdic['biomass']]=[value(EcoECM_FBA_protainmodel.reaction[inputdic['biomass']]),np.inf]
+        EcoECM_FBA_proteinmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+        v0_biomass=EcoECM_FBA_proteinmodel.obj()
+        print(f"maximum growth rate value is: {EcoECM_FBA_proteinmodel.obj()}(mmol/gDW/h)")
+        constr_coeff['fix_reactions'][inputdic['biomass']]=[value(EcoECM_FBA_proteinmodel.reaction[inputdic['biomass']]),np.inf]
         if path_strain == 'iML1515':
-            constr_coeff['fix_reactions'][inputdic['biomass']]=[value(EcoECM_FBA_protainmodel.reaction[inputdic['biomass']])*0.9,np.inf]
-        EcoECM_FBA_protainmodel_B1=FBA_template2(set_obj_B_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel_B1,'gurobi')
-        B_value1=EcoECM_FBA_protainmodel_B1.obj()
-        print(f"The maximum thermodynamic driving force value is : {EcoECM_FBA_protainmodel.obj()}")
+            constr_coeff['fix_reactions'][inputdic['biomass']]=[value(EcoECM_FBA_proteinmodel.reaction[inputdic['biomass']])*0.9,np.inf]
+        EcoECM_FBA_proteinmodel_B1=FBA_template2(set_obj_B_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel_B1,'gurobi')
+        B_value1=EcoECM_FBA_proteinmodel_B1.obj()
+        print(f"The maximum thermodynamic driving force value is : {EcoECM_FBA_proteinmodel.obj()}")
         constr_coeff['fix_E_total']=True
-        EcoECM_PFBA_protainmodel_wild=FBA_template2(set_obj_V_value=True,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_PFBA_protainmodel_wild,'gurobi')
-        EcoECM_PFBA_protainmodel_wild.obj()
-        bio=showflux(EcoECM_PFBA_protainmodel_wild)
+        EcoECM_PFBA_proteinmodel_wild=FBA_template2(set_obj_V_value=True,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_PFBA_proteinmodel_wild,'gurobi')
+        EcoECM_PFBA_proteinmodel_wild.obj()
+        bio=showflux(EcoECM_PFBA_proteinmodel_wild)
     # mini enzyme
     # mini enzyme
         constr_coeff={}
@@ -136,10 +132,10 @@ def calculate_biomass(Concretemodel_Need_Data,inputdic,model,path_strain):
         constr_coeff['biomass_constrain']=(inputdic['biomass'],v0_biomass*0.95) 
         obj_name=inputdic['biomass']
         obj_target='minimize'
-        EcoECM_FBA_protainmodel=FBA_template2(set_obj_sum_e=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-        totalE=EcoECM_FBA_protainmodel.obj()
-        print(f"minimizing the total enzyme concentration  is: {EcoECM_FBA_protainmodel.obj()}((mmol/gDW)")
+        EcoECM_FBA_proteinmodel=FBA_template2(set_obj_sum_e=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+        totalE=EcoECM_FBA_proteinmodel.obj()
+        print(f"minimizing the total enzyme concentration  is: {EcoECM_FBA_proteinmodel.obj()}((mmol/gDW)")
     return B_value1,v0_biomass,bio,totalE,objvalue2
     return B_value1,v0_biomass,bio,totalE,objvalue2
 
@@ -178,16 +174,16 @@ def calculate_wildrange_reaction(Concretemodel_Need_Data,obj_name,inputdic,objva
         constr_coeff['biomass_constrain']=(inputdic['biomass'],v0_biomass*0.95)  
         #计算酶量最小值
         obj_target = 'minimize'  
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  # gurobi求解器
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  # gurobi求解器
 
-        min_value = EcoECM_FBA_protainmodel.obj()
+        min_value = EcoECM_FBA_proteinmodel.obj()
         print(f"Objective: {obj_name}, Maximize: {min_value}")
         #计算酶量最大值
         obj_target = 'maximize'
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
-        max_value = EcoECM_FBA_protainmodel.obj()  
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
+        max_value = EcoECM_FBA_proteinmodel.obj()  
         print(f"Objective: {obj_name}, Maximize: {max_value}")
         results[obj_name] = {'range': [min_value, max_value]}
         #酶模型下的酶量分布
@@ -203,26 +199,26 @@ def calculate_wildrange_reaction(Concretemodel_Need_Data,obj_name,inputdic,objva
         constr_coeff['biomass_constrain']=(inputdic['biomass'],v0_biomass*0.95) 
         obj_target = 'minimize' 
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value_e0=True, obj_name=obj_name, obj_target=obj_target, mode='SE', constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value_e0=True, obj_name=obj_name, obj_target=obj_target, mode='SE', constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
-            min_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
+            min_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             min_value = 0
-        min_value = EcoECM_FBA_protainmodel.obj()
+        min_value = EcoECM_FBA_proteinmodel.obj()
         print(f"Objective: {obj_name}, Maximize: {min_value}")
         obj_target = 'maximize'   
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value_e0=True, obj_name=obj_name, obj_target=obj_target, mode='SE', constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value_e0=True, obj_name=obj_name, obj_target=obj_target, mode='SE', constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  
-            max_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  
+            max_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             max_value = 100
-        # max_value = EcoECM_FBA_protainmodel.obj() 
+        # max_value = EcoECM_FBA_proteinmodel.obj() 
         print(f"Objective: {obj_name}, Maximize: {max_value}")
         results = {obj_name: {'range': [min_value, max_value]}} 
     #热力学模型下的酶量分布范围
@@ -240,22 +236,22 @@ def calculate_wildrange_reaction(Concretemodel_Need_Data,obj_name,inputdic,objva
 
         obj_target = 'minimize' 
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
-            min_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
+            min_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             min_value = 0
         print(f"Objective: {obj_name}, Maximize: {min_value}")
         obj_target = 'maximize' 
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  
-            max_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  
+            max_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             max_value = 100
@@ -279,10 +275,10 @@ def calculate_wildrange_reaction(Concretemodel_Need_Data,obj_name,inputdic,objva
 
         obj_target = 'minimize'  
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value_e0=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value_e0=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
-            min_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
+            min_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             min_value = 0
@@ -291,10 +287,10 @@ def calculate_wildrange_reaction(Concretemodel_Need_Data,obj_name,inputdic,objva
 
         obj_target = 'maximize'  
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value_e0=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value_e0=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  
-            max_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  
+            max_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             max_value = 100
@@ -336,22 +332,22 @@ def calculate_wildrange(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,v0_b
         results = {}
         constr_coeff={}
         constr_coeff['fix_reactions']={}  
-        # 固定底物摄入
+        # fix subsrate uptake
         constr_coeff['substrate_constrain']=(inputdic['substrate'],objvalue2)
-        # 固定细胞最大生长
+        # fix biomass growth, 
         constr_coeff['biomass_constrain']=(inputdic['biomass'],v0_biomass*0.95)  
-        #计算酶量最小值
+        # calculate the minimum enzyme requirements
         obj_target = 'minimize'  
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  # gurobi求解器
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  # gurobi求解器
 
-        min_value = EcoECM_FBA_protainmodel.obj()
+        min_value = EcoECM_FBA_proteinmodel.obj()
         print(f"Objective: {obj_name}, Maximize: {min_value}")
-        #计算酶量最大值
+        # calculate the maximum enzyme requirements
         obj_target = 'maximize'
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
-        max_value = EcoECM_FBA_protainmodel.obj()  
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
+        max_value = EcoECM_FBA_proteinmodel.obj()  
         print(f"Objective: {obj_name}, Maximize: {max_value}")
         results[obj_name] = {'range': [min_value, max_value]}
         #酶模型下的酶量分布
@@ -362,38 +358,39 @@ def calculate_wildrange(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,v0_b
         #固定最小总酶量
         Concretemodel_Need_Data['E_total']=totalE*1.001
         if path_strain == 'iML1515':
-            Concretemodel_Need_Data['E_total']=totalE*1.5
+            Concretemodel_Need_Data['E_total']=totalE
         constr_coeff['substrate_constrain']=(inputdic['substrate'],objvalue2)
         constr_coeff['biomass_constrain']=(inputdic['biomass'],v0_biomass*0.95) 
         obj_target = 'minimize' 
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value_e=True, obj_name=obj_name, obj_target=obj_target, mode='SE', constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value_e=True, obj_name=obj_name, obj_target=obj_target, mode='SE', constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
-            min_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
+            min_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             min_value = 0
-        min_value = EcoECM_FBA_protainmodel.obj()
+        min_value = EcoECM_FBA_proteinmodel.obj()
         print(f"Objective: {obj_name}, Maximize: {min_value}")
         obj_target = 'maximize'   
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value_e=True, obj_name=obj_name, obj_target=obj_target, mode='SE', constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value_e=True, obj_name=obj_name, obj_target=obj_target, mode='SE', constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  
-            max_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  
+            max_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             max_value = 100
-        # max_value = EcoECM_FBA_protainmodel.obj() 
+        # max_value = EcoECM_FBA_proteinmodel.obj() 
         print(f"Objective: {obj_name}, Maximize: {max_value}")
         results = {obj_name: {'range': [min_value, max_value]}} 
-    #热力学模型下的酶量分布范围
+
+    # compute the range of enzyme requirements
     if inputdic['mode'] == 'ST':  
         results = {}
         constr_coeff={}
-        #固定最大驱动力
+        # fix maximum driving force
         Concretemodel_Need_Data['B_value']= B_value1
         if path_strain == 'iML1515':
             Concretemodel_Need_Data['B_value']=B_value1*0.99        
@@ -404,35 +401,35 @@ def calculate_wildrange(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,v0_b
 
         obj_target = 'minimize' 
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
-            min_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
+            min_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             min_value = 0
         print(f"Objective: {obj_name}, Maximize: {min_value}")
         obj_target = 'maximize' 
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  
-            max_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  
+            max_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             max_value = 100
         print(f"Objective: {obj_name}, Maximize: {max_value}")
         results[obj_name] = {'range': [min_value, max_value]}
-        #酶热模型求酶量分布范围
+        # compute the range of enzyme requirements for the enzyme-thermo model
     if inputdic['mode'] == 'SET':
         results = {}
         constr_coeff = {}
         constr_coeff['fix_reactions'] = {} 
-        #固定最小总酶量
-        Concretemodel_Need_Data['E_total'] = totalE * 1.01
-        # 固定热力学最大驱动力
+        # fix the minimum total enzyme requirements
+        Concretemodel_Need_Data['E_total'] = totalE 
+        # fix the maximum driving force
         Concretemodel_Need_Data['B_value'] = B_value1 * 0.98
         constr_coeff['substrate_constrain'] = (inputdic['substrate'], 4.67)
         if path_strain == 'iML1515':
@@ -443,10 +440,10 @@ def calculate_wildrange(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,v0_b
 
         obj_target = 'minimize'  
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value_e=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value_e=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
-            min_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
+            min_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             min_value = 0
@@ -455,10 +452,10 @@ def calculate_wildrange(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,v0_b
 
         obj_target = 'maximize'  
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value_e=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value_e=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  
-            max_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  
+            max_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             max_value = 100
@@ -469,10 +466,11 @@ def calculate_wildrange(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,v0_b
 
     return results
 
-#计算生产状态下的酶量分布范围
-#计算生产状态下的酶量分布范围
+
+
+# compute the range of enzyme requirements for the production strain 
 def calculate_product(Concretemodel_Need_Data,inputdic,objvalue2,path_strain,v0_biomass):
-    """Calculate  the range of amounts of each enzyme in the model.
+    """
 
     Args:
         Concretemodel_Need_Data (dict): Data needed for the concrete model.
@@ -482,109 +480,110 @@ def calculate_product(Concretemodel_Need_Data,inputdic,objvalue2,path_strain,v0_
         v0_biomass (float): Initial biomass value.calculate_biomasscalculate_biomass
 
     Returns:
-        tuple: Contains B_value2, v1_product_max, pro, totalE2, EcoECM_FBA_protainmodel_B2.
+        tuple: Contains B_value2, v1_product_max, pro, totalE2, EcoECM_FBA_proteinmodel_B2.
             - B_value2 (float): Maximum driving force.
             - v1_product_max (float): Maximum product rate.
             - pro (dataframe): Flux data from the pFBA model.
             - totalE2 (float): Minimum enzyme amount.
-            - EcoECM_FBA_protainmodel_B2: Final pFBA model.
+            - EcoECM_FBA_proteinmodel_B2: Final pFBA model.
 
     """
 
     constr_coeff={}
     constr_coeff['fix_reactions'] = {}
     # constr_coeff['fix_reactions']['EX_glc__D_e_reverse']=10
-    # 固定底物摄入
+    # fix the substrate intake
     constr_coeff['substrate_constrain'] = (inputdic['substrate'],objvalue2)
-    #固定细胞生长
+    # fix the growth
     constr_coeff['biomass_constrain'] = (inputdic['biomass'],v0_biomass*0.1)
-    #设置目标产品
+    # set the product to be optimized
     obj_name = inputdic['product']
     obj_target = 'maximize'
     B_value2 = 'None'
     totalE2 = 'None'
-    EcoECM_FBA_protainmodel_B2 = 'None'
-    #计量学模型的产品速率
+    EcoECM_FBA_proteinmodel_B2 = 'None'
+    #for stoichiometric model
     if inputdic['mode'] == 'S':
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-        v1_product_max = EcoECM_FBA_protainmodel.obj()
-        print(f"maximum product rate value is: {EcoECM_FBA_protainmodel.obj()}(mmol/gDW/h)")
-        constr_coeff['fix_reactions'][inputdic['substrate']] = [value(EcoECM_FBA_protainmodel.reaction[inputdic['substrate']]),np.inf]
-        constr_coeff['fix_reactions'][inputdic['product']] = [value(EcoECM_FBA_protainmodel.reaction[inputdic['product']]),np.inf]
-        EcoECM_PFBA_protainmodel_pro = FBA_template2(set_obj_V_value=True,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_PFBA_protainmodel_pro,'gurobi')
-        print(EcoECM_PFBA_protainmodel_pro.obj())
-        pro = showflux(EcoECM_PFBA_protainmodel_pro)
-    # 酶模型的产品速率
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+        v1_product_max = EcoECM_FBA_proteinmodel.obj()
+        print(f"maximum product rate value is: {EcoECM_FBA_proteinmodel.obj()}(mmol/gDW/h)")
+        constr_coeff['fix_reactions'][inputdic['substrate']] = [value(EcoECM_FBA_proteinmodel.reaction[inputdic['substrate']]),np.inf]
+        constr_coeff['fix_reactions'][inputdic['product']] = [value(EcoECM_FBA_proteinmodel.reaction[inputdic['product']]),np.inf]
+        EcoECM_PFBA_proteinmodel_pro = FBA_template2(set_obj_V_value=True,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_PFBA_proteinmodel_pro,'gurobi')
+        print(EcoECM_PFBA_proteinmodel_pro.obj())
+        pro = showflux(EcoECM_PFBA_proteinmodel_pro)
+    # for enzyme constrained model
     if inputdic['mode'] == 'SE':
         if path_strain == 'iCW':
             Concretemodel_Need_Data['E_total']=0.56* np.mean([0.45311986236929197,0.4622348377433211,0.4600801040374112])
         if path_strain == 'iML1515':
             Concretemodel_Need_Data['E_total']=0.228
-        EcoECM_FBA_protainmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-        v1_product_max=EcoECM_FBA_protainmodel.obj()
-        print(f"maximum growth rate value is: {EcoECM_FBA_protainmodel.obj()}(mmol/gDW/h)")
+        EcoECM_FBA_proteinmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+        v1_product_max=EcoECM_FBA_proteinmodel.obj()
+        print(f"maximum growth rate value is: {EcoECM_FBA_proteinmodel.obj()}(mmol/gDW/h)")
         # pfba
-        constr_coeff['substrate_constrain'] = (inputdic['substrate'],value(EcoECM_FBA_protainmodel.reaction[inputdic['substrate']]))
+        constr_coeff['substrate_constrain'] = (inputdic['substrate'],value(EcoECM_FBA_proteinmodel.reaction[inputdic['substrate']]))
         constr_coeff['biomass_constrain'] = (inputdic['biomass'],v0_biomass*0.1)
         constr_coeff['fix_E_total']=True
-        EcoECM_PFBA_protainmodel_pro=FBA_template2(set_obj_V_value=True,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_PFBA_protainmodel_pro,'gurobi')
-        EcoECM_PFBA_protainmodel_pro.obj()
-        pro = showflux(EcoECM_PFBA_protainmodel_pro)
+        EcoECM_PFBA_proteinmodel_pro=FBA_template2(set_obj_V_value=True,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_PFBA_proteinmodel_pro,'gurobi')
+        EcoECM_PFBA_proteinmodel_pro.obj()
+        pro = showflux(EcoECM_PFBA_proteinmodel_pro)
         # mini enzyme
         constr_coeff={}
         constr_coeff['fix_reactions']={}
-        constr_coeff['substrate_constrain']=(inputdic['substrate'],value(EcoECM_FBA_protainmodel.reaction[inputdic['substrate']]))
+        constr_coeff['substrate_constrain']=(inputdic['substrate'],value(EcoECM_FBA_proteinmodel.reaction[inputdic['substrate']]))
         constr_coeff['biomass_constrain']=(inputdic['biomass'],v0_biomass*0.1) 
         constr_coeff['product_constrain']=(inputdic['product'],v1_product_max*0.95)
         obj_name=inputdic['product']
         obj_target='minimize'
-        EcoECM_FBA_protainmodel=FBA_template2(set_obj_sum_e=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-        totalE2=EcoECM_FBA_protainmodel.obj()
-        print(f"minimizing the total enzyme concentration  is: {EcoECM_FBA_protainmodel.obj()}((mmol/gDW)")
-    #热力学模型的产品速率
+        EcoECM_FBA_proteinmodel=FBA_template2(set_obj_sum_e=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+        totalE2=EcoECM_FBA_proteinmodel.obj()
+        print(f"minimizing the total enzyme concentration  is: {EcoECM_FBA_proteinmodel.obj()}((mmol/gDW)")
+    #for thermodynamic constrained model
     if inputdic['mode'] == 'ST':  
         Concretemodel_Need_Data['B_value']=0
         Concretemodel_Need_Data['K_value']=1249
 
-        EcoECM_FBA_protainmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-        v1_product_max=EcoECM_FBA_protainmodel.obj()
-        print(f"maximum growth rate value is: {EcoECM_FBA_protainmodel.obj()}(mmol/gDW/h)")
-        constr_coeff['fix_reactions'][inputdic['product']]=[value(EcoECM_FBA_protainmodel.reaction[inputdic['product']]*0.99),np.inf]
-        EcoECM_FBA_protainmodel_B2=FBA_template2(set_obj_B_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel_B2,'gurobi')
-        B_value2=EcoECM_FBA_protainmodel_B2.obj()
-        print(f"The maximum thermodynamic driving force value is : {EcoECM_FBA_protainmodel.obj()}")
-        constr_coeff['fix_reactions'][inputdic['substrate']]=[value(EcoECM_FBA_protainmodel.reaction[inputdic['substrate']]),np.inf]
-        constr_coeff['fix_reactions'][inputdic['product']]=[value(EcoECM_FBA_protainmodel.reaction[inputdic['product']]),np.inf]
-        EcoECM_PFBA_protainmodel_pro=FBA_template2(set_obj_V_value=True,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_PFBA_protainmodel_pro,'gurobi')
-        print(EcoECM_PFBA_protainmodel_pro.obj())
-        pro=showflux(EcoECM_PFBA_protainmodel_pro)
-    # 酶热模型的产品速率
+        EcoECM_FBA_proteinmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+        v1_product_max=EcoECM_FBA_proteinmodel.obj()
+        print(f"maximum growth rate value is: {EcoECM_FBA_proteinmodel.obj()}(mmol/gDW/h)")
+        constr_coeff['fix_reactions'][inputdic['product']]=[value(EcoECM_FBA_proteinmodel.reaction[inputdic['product']]*0.99),np.inf]
+        EcoECM_FBA_proteinmodel_B2=FBA_template2(set_obj_B_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel_B2,'gurobi')
+        B_value2=EcoECM_FBA_proteinmodel_B2.obj()
+        print(f"The maximum thermodynamic driving force value is : {EcoECM_FBA_proteinmodel.obj()}")
+        constr_coeff['fix_reactions'][inputdic['substrate']]=[value(EcoECM_FBA_proteinmodel.reaction[inputdic['substrate']]),np.inf]
+        constr_coeff['fix_reactions'][inputdic['product']]=[value(EcoECM_FBA_proteinmodel.reaction[inputdic['product']]),np.inf]
+        EcoECM_PFBA_proteinmodel_pro=FBA_template2(set_obj_V_value=True,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_PFBA_proteinmodel_pro,'gurobi')
+        print(EcoECM_PFBA_proteinmodel_pro.obj())
+        pro=showflux(EcoECM_PFBA_proteinmodel_pro)
+    # for thermo-enzyme constrained model
     if inputdic['mode'] == 'SET':
         if path_strain == 'iCW':
+            # the total enzyme concentration considered in enzyme constraints 
             Concretemodel_Need_Data['E_total']=0.56* np.mean([0.45311986236929197,0.4622348377433211,0.4600801040374112])
         if path_strain == 'iML1515':
             Concretemodel_Need_Data['E_total']=0.228
         Concretemodel_Need_Data['B_value']=0
         Concretemodel_Need_Data['K_value']=1249
-        EcoECM_FBA_protainmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-        v1_product_max=EcoECM_FBA_protainmodel.obj()
-        print(f"maximum growth rate value is: {EcoECM_FBA_protainmodel.obj()}(mmol/gDW/h)")
+        EcoECM_FBA_proteinmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+        v1_product_max=EcoECM_FBA_proteinmodel.obj()
+        print(f"maximum growth rate value is: {EcoECM_FBA_proteinmodel.obj()}(mmol/gDW/h)")
         #固定产品，求最大驱动力
-        constr_coeff['fix_reactions'][inputdic['product']]=[value(EcoECM_FBA_protainmodel.reaction[inputdic['product']])*0.9,np.inf]
-        EcoECM_FBA_protainmodel_B2=FBA_template2(set_obj_B_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel_B2,'gurobi')
-        B_value2=EcoECM_FBA_protainmodel_B2.obj()
-        print(f"The maximum thermodynamic driving force value is : {EcoECM_FBA_protainmodel.obj()}")
-        pro=showflux(EcoECM_FBA_protainmodel)
+        constr_coeff['fix_reactions'][inputdic['product']]=[value(EcoECM_FBA_proteinmodel.reaction[inputdic['product']])*0.9,np.inf]
+        EcoECM_FBA_proteinmodel_B2=FBA_template2(set_obj_B_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel_B2,'gurobi')
+        B_value2=EcoECM_FBA_proteinmodel_B2.obj()
+        print(f"The maximum thermodynamic driving force value is : {EcoECM_FBA_proteinmodel.obj()}")
+        pro=showflux(EcoECM_FBA_proteinmodel)
     # mini enzyme
     # mini enzyme
     # 求最小酶量
@@ -595,15 +594,16 @@ def calculate_product(Concretemodel_Need_Data,inputdic,objvalue2,path_strain,v0_
         constr_coeff['product_constrain']=(inputdic['product'],v1_product_max*0.95)
         obj_name=inputdic['product']
         obj_target='minimize'
-        EcoECM_FBA_protainmodel=FBA_template2(set_obj_sum_e=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-        totalE2=EcoECM_FBA_protainmodel.obj()
-        print(f"minimizing the total enzyme concentration  is: {EcoECM_FBA_protainmodel.obj()}((mmol/gDW)")
-    return B_value2,v1_product_max,pro,totalE2,EcoECM_FBA_protainmodel_B2
+        EcoECM_FBA_proteinmodel=FBA_template2(set_obj_sum_e=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+        totalE2=EcoECM_FBA_proteinmodel.obj()
+        print(f"minimizing the total enzyme concentration  is: {EcoECM_FBA_proteinmodel.obj()}((mmol/gDW)")
+    return B_value2,v1_product_max,pro,totalE2,EcoECM_FBA_proteinmodel_B2
 
 
 
 # 计算最大产品下的酶量分布情况
+# 
 def calculate_over_reaction(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,v0_biomass,v1_product_max,totalE2,path_strain,B_value2):
     """
     Calculate the range of enzyme levels for different models based on the specified mode.
@@ -622,7 +622,7 @@ def calculate_over_reaction(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,
     Returns:
     - results (dict): Dictionary containing the range of values (min and max) for the objective reaction/product.
     """
-    #  计量学模型的酶量分布
+    #  compute the flux range for the stoichiometric model 
     if inputdic['mode'] == 'S':
         results = {}
         constr_coeff={}
@@ -632,29 +632,29 @@ def calculate_over_reaction(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,
         constr_coeff['product_constrain']=(inputdic['product'],v1_product_max*0.95)
         obj_target = 'minimize' 
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
-            min_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
+            min_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             min_value = 0
-        # min_value = EcoECM_FBA_protainmodel.obj()  
+        # min_value = EcoECM_FBA_proteinmodel.obj()  
         print(f"Objective: {obj_name}, Maximize: {min_value}")
         obj_target = 'maximize'  
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  
-            max_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  
+            max_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             max_value = 100
         print(f"Objective: {obj_name}, Maximize: {max_value}")
         results[obj_name] = {'range': [min_value, max_value]}
-        # 酶约束模型的酶量分布
+        # compute the enzyme concentration range for the enzyme constrained model
     if inputdic['mode'] == 'SE':
         results = {}
         constr_coeff={}
@@ -667,24 +667,24 @@ def calculate_over_reaction(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,
         constr_coeff['product_constrain']=(inputdic['product'],v1_product_max*0.95) 
         obj_target = 'minimize'  
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value_e0=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value_e0=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
 
-        min_value = EcoECM_FBA_protainmodel.obj() 
+        min_value = EcoECM_FBA_proteinmodel.obj() 
         print(f"Objective: {obj_name}, Maximize: {min_value}")
         obj_target = 'maximize'
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value_e0=True, obj_name=obj_name, obj_target=obj_target, mode='SE', constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value_e0=True, obj_name=obj_name, obj_target=obj_target, mode='SE', constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  
-            max_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  
+            max_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             max_value = 100
-        # max_value = EcoECM_FBA_protainmodel.obj()  
+        # max_value = EcoECM_FBA_proteinmodel.obj()  
         print(f"Objective: {obj_name}, Maximize: {max_value}")
         results = {obj_name: {'range': [min_value, max_value]}} 
-        # 热力学模型的酶量分布
+        # compute the flux range for the thermodynamic constrained model 
     if inputdic['mode'] == 'ST':  
         results = {}
         constr_coeff={}
@@ -698,33 +698,34 @@ def calculate_over_reaction(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,
 
         obj_target = 'minimize' 
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
-            min_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
+            min_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             min_value = 0
-        # min_value = EcoECM_FBA_protainmodel.obj()  
+        # min_value = EcoECM_FBA_proteinmodel.obj()  
         print(f"Objective: {obj_name}, Maximize: {min_value}")
         obj_target = 'maximize' 
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  
-            max_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  
+            max_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             max_value = 100
         print(f"Objective: {obj_name}, Maximize: {max_value}")
         results[obj_name] = {'range': [min_value, max_value]}
-        #  酶热模型的酶量分布
+        # compute the flux range for the thermo-thermodynamic constrained model 
     if inputdic['mode'] == 'SET':
         results = {}
         constr_coeff={}
         constr_coeff['fix_reactions']={} 
+        # relaxation of constraints for ensuring the feasibility of problem solving 
         Concretemodel_Need_Data['E_total']=totalE2*1.01
         Concretemodel_Need_Data['B_value']=B_value2*0.9
         if path_strain == 'iML1515':
@@ -735,10 +736,10 @@ def calculate_over_reaction(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,
         constr_coeff['product_constrain']=(inputdic['product'],v1_product_max*0.95) 
         obj_target = 'minimize'   
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value_e0=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value_e0=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
-            min_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
+            min_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             min_value = 0
@@ -747,10 +748,10 @@ def calculate_over_reaction(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,
 
         obj_target = 'maximize'  
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value_e0=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value_e0=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  
-            max_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  
+            max_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             max_value = 100
@@ -761,7 +762,8 @@ def calculate_over_reaction(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,
     return results
 
 
-# 计算最大产品下的酶量分布情况
+
+# compute the range of flux or enzyme concentration for the over-production strain for the range comparison based algorithm 
 def calculate_over(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,v0_biomass,v1_product_max,totalE2,path_strain,B_value2):
     """
     Calculate the range of enzyme levels for different models based on the specified mode.
@@ -780,7 +782,7 @@ def calculate_over(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,v0_biomas
     Returns:
     - results (dict): Dictionary containing the range of values (min and max) for the objective reaction/product.
     """
-    #  计量学模型的酶量分布
+    #  stoichi
     if inputdic['mode'] == 'S':
         results = {}
         constr_coeff={}
@@ -790,23 +792,23 @@ def calculate_over(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,v0_biomas
         constr_coeff['product_constrain']=(inputdic['product'],v1_product_max*0.95)
         obj_target = 'minimize' 
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
-            min_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
+            min_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             min_value = 0
-        # min_value = EcoECM_FBA_protainmodel.obj()  
+        # min_value = EcoECM_FBA_proteinmodel.obj()  
         print(f"Objective: {obj_name}, Maximize: {min_value}")
         obj_target = 'maximize'  
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  
-            max_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  
+            max_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             max_value = 100
@@ -817,7 +819,7 @@ def calculate_over(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,v0_biomas
         results = {}
         constr_coeff={}
         constr_coeff['fix_reactions']={}  
-        Concretemodel_Need_Data['E_total']=totalE2*1.001
+        Concretemodel_Need_Data['E_total']=totalE2*1.0001
         if path_strain == 'iML1515':
             Concretemodel_Need_Data['E_total']=totalE2*1.5
         constr_coeff['substrate_constrain']=(inputdic['substrate'],objvalue2)
@@ -825,21 +827,21 @@ def calculate_over(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,v0_biomas
         constr_coeff['product_constrain']=(inputdic['product'],v1_product_max*0.95) 
         obj_target = 'minimize'  
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value_e=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value_e=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
 
-        min_value = EcoECM_FBA_protainmodel.obj() 
+        min_value = EcoECM_FBA_proteinmodel.obj() 
         print(f"Objective: {obj_name}, Maximize: {min_value}")
         obj_target = 'maximize'
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value_e=True, obj_name=obj_name, obj_target=obj_target, mode='SE', constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value_e=True, obj_name=obj_name, obj_target=obj_target, mode='SE', constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  
-            max_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  
+            max_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             max_value = 100
-        # max_value = EcoECM_FBA_protainmodel.obj()  
+        # max_value = EcoECM_FBA_proteinmodel.obj()  
         print(f"Objective: {obj_name}, Maximize: {max_value}")
         results = {obj_name: {'range': [min_value, max_value]}} 
         # 热力学模型的酶量分布
@@ -856,23 +858,23 @@ def calculate_over(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,v0_biomas
 
         obj_target = 'minimize' 
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
-            min_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
+            min_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             min_value = 0
-        # min_value = EcoECM_FBA_protainmodel.obj()  
+        # min_value = EcoECM_FBA_proteinmodel.obj()  
         print(f"Objective: {obj_name}, Maximize: {min_value}")
         obj_target = 'maximize' 
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  
-            max_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  
+            max_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             max_value = 100
@@ -883,20 +885,17 @@ def calculate_over(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,v0_biomas
         results = {}
         constr_coeff={}
         constr_coeff['fix_reactions']={} 
-        Concretemodel_Need_Data['E_total']=totalE2*1.01
-        Concretemodel_Need_Data['B_value']=B_value2*0.9
-        if path_strain == 'iML1515':
-            Concretemodel_Need_Data['E_total']=totalE2*1.01
-            Concretemodel_Need_Data['B_value']=B_value2*0.9        
+        Concretemodel_Need_Data['E_total']=totalE2*1.0001
+        Concretemodel_Need_Data['B_value']=B_value2*0.99     
         constr_coeff['substrate_constrain']=(inputdic['substrate'],objvalue2)
         constr_coeff['biomass_constrain']=(inputdic['biomass'],v0_biomass*0.1) 
         constr_coeff['product_constrain']=(inputdic['product'],v1_product_max*0.95) 
         obj_target = 'minimize'   
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value_e=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value_e=True, obj_name=obj_name, obj_target=obj_target, mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi') 
-            min_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi') 
+            min_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             min_value = 0
@@ -905,10 +904,10 @@ def calculate_over(Concretemodel_Need_Data,obj_name,inputdic,objvalue2,v0_biomas
 
         obj_target = 'maximize'  
 
-        EcoECM_FBA_protainmodel = FBA_template2(set_obj_value_e=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
+        EcoECM_FBA_proteinmodel = FBA_template2(set_obj_value_e=True, obj_name=obj_name, obj_target=obj_target,mode=inputdic['mode'], constr_coeff=constr_coeff, Concretemodel_Need_Data=Concretemodel_Need_Data)
         try:
-            Model_Solve(EcoECM_FBA_protainmodel, 'gurobi')  
-            max_value = EcoECM_FBA_protainmodel.obj()
+            Model_Solve(EcoECM_FBA_proteinmodel, 'gurobi')  
+            max_value = EcoECM_FBA_proteinmodel.obj()
         except Exception as e:
             print(f"Error occurred while solving: {e}")
             max_value = 100
@@ -1199,13 +1198,13 @@ def ref_e_con(inputdic,Concretemodel_Need_Data,totalE,path_strain,objvalue2):
     obj_name=inputdic['biomass']
     obj_target='maximize'
 
-    EcoECM_FBA_protainmodel_MIN=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-    Model_Solve(EcoECM_FBA_protainmodel_MIN,'gurobi')
-    print(EcoECM_FBA_protainmodel_MIN.obj())
+    EcoECM_FBA_proteinmodel_MIN=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+    Model_Solve(EcoECM_FBA_proteinmodel_MIN,'gurobi')
+    print(EcoECM_FBA_proteinmodel_MIN.obj())
     # wild e1
-    e_ref={x: value(EcoECM_FBA_protainmodel_MIN.e1[x]) for x in EcoECM_FBA_protainmodel_MIN.e1}
+    e_ref={x: value(EcoECM_FBA_proteinmodel_MIN.e1[x]) for x in EcoECM_FBA_proteinmodel_MIN.e1}
     mw_dict=Concretemodel_Need_Data['mw_dict']
-    reaction_dict = {x: value(EcoECM_FBA_protainmodel_MIN.reaction[x]) for x in EcoECM_FBA_protainmodel_MIN.reaction}
+    reaction_dict = {x: value(EcoECM_FBA_proteinmodel_MIN.reaction[x]) for x in EcoECM_FBA_proteinmodel_MIN.reaction}
     reaction_dict_bio = {key: value for key, value in reaction_dict.items() if value > 1e-1}
     E_refdict = {}
     kcat_dict=Concretemodel_Need_Data['kcat_dict']
@@ -1287,7 +1286,7 @@ def reaction_flux(inputdic,Concretemodel_Need_Data,totalE2,path_strain,totalE,ob
     Returns:
     - reaction_dict (dict): Dictionary of reaction IDs and their corresponding flux values.
     - kcat_dict (dict): Dictionary of kcat values for reactions present in reaction_dict.
-    - EcoECM_FBA_protainmodel_pro_max (object): The solved FBA model object.
+    - EcoECM_FBA_proteinmodel_pro_max (object): The solved FBA model object.
     """
     constr_coeff={}
     constr_coeff['fix_reactions']={}
@@ -1299,27 +1298,27 @@ def reaction_flux(inputdic,Concretemodel_Need_Data,totalE2,path_strain,totalE,ob
     obj_name=inputdic['product']
     obj_target='maximize'
 
-    EcoECM_FBA_protainmodel_pro_max=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-    Model_Solve(EcoECM_FBA_protainmodel_pro_max,'gurobi')
-    print(EcoECM_FBA_protainmodel_pro_max.obj())
+    EcoECM_FBA_proteinmodel_pro_max=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+    Model_Solve(EcoECM_FBA_proteinmodel_pro_max,'gurobi')
+    print(EcoECM_FBA_proteinmodel_pro_max.obj())
 
     # get reaction flux
-    reaction_dict = {x: value(EcoECM_FBA_protainmodel_pro_max.reaction[x]) for x in EcoECM_FBA_protainmodel_pro_max.reaction}
+    reaction_dict = {x: value(EcoECM_FBA_proteinmodel_pro_max.reaction[x]) for x in EcoECM_FBA_proteinmodel_pro_max.reaction}
     reaction_dict = {key: value for key, value in reaction_dict.items() if value > 1e-1}
     kcat_dict=Concretemodel_Need_Data['kcat_dict']
     kcat_dict={key:value for key,value in kcat_dict.items()if key in reaction_dict}
-    return reaction_dict,kcat_dict,EcoECM_FBA_protainmodel_pro_max
+    return reaction_dict,kcat_dict,EcoECM_FBA_proteinmodel_pro_max
 
 
 
 # analysis enzyme usage_over
 # e1*MW
-def enzyme_usage_over(EcoECM_FBA_protainmodel_pro_max,Concretemodel_Need_Data):
+def enzyme_usage_over(EcoECM_FBA_proteinmodel_pro_max,Concretemodel_Need_Data):
     """
     Calculates the enzyme usage and normalizes it based on total enzyme concentration.
 
     Args:
-    - EcoECM_FBA_protainmodel_pro_max (object): The solved FBA model object containing enzyme variables.
+    - EcoECM_FBA_proteinmodel_pro_max (object): The solved FBA model object containing enzyme variables.
     - Concretemodel_Need_Data (dict): Dictionary containing necessary data for the concrete model, including molecular weights.
 
     Returns:
@@ -1327,7 +1326,7 @@ def enzyme_usage_over(EcoECM_FBA_protainmodel_pro_max,Concretemodel_Need_Data):
     - E_dict (dict): Dictionary of genes and their corresponding enzyme usage values calculated using molecular weights.
     - e_dict (dict): Dictionary of genes and their corresponding raw enzyme amounts from the FBA model.
     """
-    e_dict = {x: value(EcoECM_FBA_protainmodel_pro_max.e1[x]) for x in EcoECM_FBA_protainmodel_pro_max.e1}
+    e_dict = {x: value(EcoECM_FBA_proteinmodel_pro_max.e1[x]) for x in EcoECM_FBA_proteinmodel_pro_max.e1}
     mw_dict=Concretemodel_Need_Data['mw_dict']
     E_dict = {}
     for gene in e_dict:
@@ -1464,25 +1463,25 @@ def basic(bio,pro,B_value1,v0_biomass,B_value2,v1_product_max,totalE,totalE2,inp
 
 
 
-def bottleneck_reactions(EcoECM_FBA_protainmodel_B2,model):
+def bottleneck_reactions(EcoECM_FBA_proteinmodel_B2,model):
     """
     Identifies bottleneck reactions based on flux and diffusion values from the given FBA model.
 
     Args:
-    - EcoECM_FBA_protainmodel_B2 (object): An FBA model containing reaction flux and diffusion coefficients.
+    - EcoECM_FBA_proteinmodel_B2 (object): An FBA model containing reaction flux and diffusion coefficients.
     - model (object): A model object used to retrieve reaction equations.
 
     Returns:
     - bottleneck_reactions_list (list): A list of reaction IDs that are identified as bottleneck reactions.
     - Df (DataFrame): A DataFrame containing details of the bottleneck reactions, including reaction ID, equation, diffusion value, and flux value.
     """
-    Df_dict = {x: value(EcoECM_FBA_protainmodel_B2.Df[x]) for x in EcoECM_FBA_protainmodel_B2.Df}
+    Df_dict = {x: value(EcoECM_FBA_proteinmodel_B2.Df[x]) for x in EcoECM_FBA_proteinmodel_B2.Df}
     # get reaction and flux
-    reaction={x:value(EcoECM_FBA_protainmodel_B2.reaction[x]) for x in EcoECM_FBA_protainmodel_B2.reaction}
+    reaction={x:value(EcoECM_FBA_proteinmodel_B2.reaction[x]) for x in EcoECM_FBA_proteinmodel_B2.reaction}
     # get reaction>10-3
     filtered_reaction = {k: v for k, v in reaction.items() if v > 1e-3}
     # get df=B
-    B_dict={x:value(EcoECM_FBA_protainmodel_B2.B[x]) for x in EcoECM_FBA_protainmodel_B2.B}
+    B_dict={x:value(EcoECM_FBA_proteinmodel_B2.B[x]) for x in EcoECM_FBA_proteinmodel_B2.B}
     B = next(iter(B_dict.values()))
     matching_keys = [key for key, value in Df_dict.items() if value == B]
     # find bottleneck_rxn
@@ -1689,7 +1688,7 @@ def must_df(inputdic,equation_dict,new_gene_reaction_mapping_bio,new_gene_reacti
         meged_df['kcat(1/h)'] = meged_df['gene'].map(gene_kcat_mapping)
         mw_dict=Concretemodel_Need_Data['mw_dict']
         meged_df['mw(g/mg)'] = meged_df['gene'].map(mw_dict).apply(lambda x: format(x,'.3e'))
-
+        meged_df['manipulations'] = meged_df.apply(lambda row: 'None' if pd.isnull(row['reaction_bio']) and pd.isnull(row['reaction_pro']) else row['manipulations'], axis=1)
     if inputdic['mode'] =='SET':
         # make excel
         wild_data =[{'gene':gene,'enzyme_wild':[format(value,'.3e') for value in data['range']]}for gene,data in enzyme_results_data.items()]
@@ -1720,6 +1719,7 @@ def must_df(inputdic,equation_dict,new_gene_reaction_mapping_bio,new_gene_reacti
         meged_df['kcat(1/h)'] = meged_df['gene'].map(gene_kcat_mapping)
         mw_dict=Concretemodel_Need_Data['mw_dict']
         meged_df['mw(g/mg)'] = meged_df['gene'].map(mw_dict).apply(lambda x: format(x,'.3e'))
+        meged_df['manipulations'] = meged_df.apply(lambda row: 'None' if pd.isnull(row['reaction_bio']) and pd.isnull(row['reaction_pro']) else row['manipulations'], axis=1)
     return meged_df
 
 def calculate_product_fseof(Concretemodel_Need_Data,inputdic,model):
@@ -1743,32 +1743,32 @@ def calculate_product_fseof(Concretemodel_Need_Data,inputdic,model):
     obj_name=inputdic['product']
     obj_target='maximize'
     if inputdic['mode'] == 'S':
-        EcoECM_FBA_protainmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-        print(EcoECM_FBA_protainmodel.obj())
-        product=EcoECM_FBA_protainmodel.obj()
+        EcoECM_FBA_proteinmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+        print(EcoECM_FBA_proteinmodel.obj())
+        product=EcoECM_FBA_proteinmodel.obj()
     if inputdic['mode'] == 'SE':
         Concretemodel_Need_Data['E_total']=0.56* np.mean([0.45311986236929197,0.4622348377433211,0.4600801040374112])
-        EcoECM_FBA_protainmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-        product=EcoECM_FBA_protainmodel.obj()
-        print(EcoECM_FBA_protainmodel.obj())
+        EcoECM_FBA_proteinmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+        product=EcoECM_FBA_proteinmodel.obj()
+        print(EcoECM_FBA_proteinmodel.obj())
 
     if inputdic['mode'] == 'ST':
         Concretemodel_Need_Data['B_value']=0
         Concretemodel_Need_Data['K_value']=1249
-        EcoECM_FBA_protainmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-        print(EcoECM_FBA_protainmodel.obj())
-        product=EcoECM_FBA_protainmodel.obj()
+        EcoECM_FBA_proteinmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+        print(EcoECM_FBA_proteinmodel.obj())
+        product=EcoECM_FBA_proteinmodel.obj()
     if inputdic['mode'] == 'SET':
         Concretemodel_Need_Data['E_total']=0.56* np.mean([0.45311986236929197,0.4622348377433211,0.4600801040374112])
         Concretemodel_Need_Data['B_value']=0
         Concretemodel_Need_Data['K_value']=1249
-        EcoECM_FBA_protainmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-        Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-        print(EcoECM_FBA_protainmodel.obj())
-        product=EcoECM_FBA_protainmodel.obj()
+        EcoECM_FBA_proteinmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+        Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+        print(EcoECM_FBA_proteinmodel.obj())
+        product=EcoECM_FBA_proteinmodel.obj()
 
     return product,objvalue2
 
@@ -1825,18 +1825,18 @@ def biomass(product,inputdic,Concretemodel_Need_Data,objvalue2,model,model0):
             constr_coeff['fix_reactions']={}
             constr_coeff['substrate_constrain']=(inputdic['substrate'],objvalue2)
             constr_coeff['fix_reactions'][inputdic['product']] = [cond*0.99,np.inf]
-            EcoECM_FBA_protainmodel_max=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=mode,constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-            Model_Solve(EcoECM_FBA_protainmodel_max,'gurobi')
-            biomass=EcoECM_FBA_protainmodel_max.obj()
-            print(EcoECM_FBA_protainmodel_max.obj())
-            constr_coeff['fix_reactions'][inputdic['substrate']]=[value(EcoECM_FBA_protainmodel_max.reaction[inputdic['substrate']]),np.inf]
-            constr_coeff['fix_reactions'][inputdic['biomass']]=[value(EcoECM_FBA_protainmodel_max.reaction[inputdic['biomass']]),np.inf]
-            EcoECM_PFBA_protainmodel_wild=FBA_template2(set_obj_V_value=True,mode=mode,constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-            Model_Solve(EcoECM_PFBA_protainmodel_wild,'gurobi')
-            EcoECM_PFBA_protainmodel_wild.obj()
-            bio=showflux(EcoECM_PFBA_protainmodel_wild)
+            EcoECM_FBA_proteinmodel_max=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=mode,constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+            Model_Solve(EcoECM_FBA_proteinmodel_max,'gurobi')
+            biomass=EcoECM_FBA_proteinmodel_max.obj()
+            print(EcoECM_FBA_proteinmodel_max.obj())
+            constr_coeff['fix_reactions'][inputdic['substrate']]=[value(EcoECM_FBA_proteinmodel_max.reaction[inputdic['substrate']]),np.inf]
+            constr_coeff['fix_reactions'][inputdic['biomass']]=[value(EcoECM_FBA_proteinmodel_max.reaction[inputdic['biomass']]),np.inf]
+            EcoECM_PFBA_proteinmodel_wild=FBA_template2(set_obj_V_value=True,mode=mode,constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+            Model_Solve(EcoECM_PFBA_proteinmodel_wild,'gurobi')
+            EcoECM_PFBA_proteinmodel_wild.obj()
+            bio=showflux(EcoECM_PFBA_proteinmodel_wild)
                 
-            reaction_dict = conbine_flux(EcoECM_PFBA_protainmodel_wild,model0)
+            reaction_dict = conbine_flux(EcoECM_PFBA_proteinmodel_wild,model0)
             model_reaction_solution = pd.DataFrame(list(reaction_dict.items()), columns=['reaction', 'flux'])
 
             reactiondf['reaction'] = model_reaction_solution['reaction']
@@ -1862,24 +1862,24 @@ def biomass(product,inputdic,Concretemodel_Need_Data,objvalue2,model,model0):
             constr_coeff['fix_reactions'][inputdic['product']] = [cond*0.9,np.inf]
             obj_target='maximize'
             mode = 'ST'
-            EcoECM_FBA_protainmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=mode,constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-            Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-            print(EcoECM_FBA_protainmodel.obj())
-            constr_coeff['fix_reactions'][inputdic['biomass']]=[value(EcoECM_FBA_protainmodel.reaction[inputdic['biomass']]*0.99),np.inf]
-            EcoECM_FBA_protainmodel_B2=FBA_template2(set_obj_B_value=True,obj_name=obj_name,obj_target=obj_target,mode=mode,constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-            Model_Solve(EcoECM_FBA_protainmodel_B2,'gurobi')
-            B_value2=EcoECM_FBA_protainmodel_B2.obj()
-            print(EcoECM_FBA_protainmodel.obj())
+            EcoECM_FBA_proteinmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=mode,constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+            Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+            print(EcoECM_FBA_proteinmodel.obj())
+            constr_coeff['fix_reactions'][inputdic['biomass']]=[value(EcoECM_FBA_proteinmodel.reaction[inputdic['biomass']]*0.99),np.inf]
+            EcoECM_FBA_proteinmodel_B2=FBA_template2(set_obj_B_value=True,obj_name=obj_name,obj_target=obj_target,mode=mode,constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+            Model_Solve(EcoECM_FBA_proteinmodel_B2,'gurobi')
+            B_value2=EcoECM_FBA_proteinmodel_B2.obj()
+            print(EcoECM_FBA_proteinmodel.obj())
             constr_coeff={}
             constr_coeff['fix_reactions']={}
             Concretemodel_Need_Data['B_value']=B_value2*0.95
             constr_coeff['substrate_constrain']=(inputdic['substrate'],objvalue2)
             constr_coeff['fix_reactions'][inputdic['product']] =  [cond*0.99,np.inf]
-            EcoECM_FBA_protainmodel_max=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=mode,constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-            Model_Solve(EcoECM_FBA_protainmodel_max,'gurobi')
-            biomass=EcoECM_FBA_protainmodel_max.obj()
-            print(EcoECM_FBA_protainmodel_max.obj())
-            reaction_dict = conbine_flux(EcoECM_FBA_protainmodel_max,model0)
+            EcoECM_FBA_proteinmodel_max=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=mode,constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+            Model_Solve(EcoECM_FBA_proteinmodel_max,'gurobi')
+            biomass=EcoECM_FBA_proteinmodel_max.obj()
+            print(EcoECM_FBA_proteinmodel_max.obj())
+            reaction_dict = conbine_flux(EcoECM_FBA_proteinmodel_max,model0)
             model_reaction_solution = pd.DataFrame(list(reaction_dict.items()), columns=['reaction', 'flux'])
 
             reactiondf['reaction'] = model_reaction_solution['reaction']
@@ -1903,10 +1903,10 @@ def biomass(product,inputdic,Concretemodel_Need_Data,objvalue2,model,model0):
             Concretemodel_Need_Data['E_total']=0.56* np.mean([0.45311986236929197,0.4622348377433211,0.4600801040374112])
             constr_coeff['substrate_constrain']=(inputdic['substrate'],objvalue2)
             constr_coeff['fix_reactions'][inputdic['product']] =  [cond*0.95,np.inf]
-            EcoECM_FBA_protainmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-            Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-            biomass=EcoECM_FBA_protainmodel.obj()
-            print(EcoECM_FBA_protainmodel.obj())
+            EcoECM_FBA_proteinmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+            Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+            biomass=EcoECM_FBA_proteinmodel.obj()
+            print(EcoECM_FBA_proteinmodel.obj())
             # mini enzyme
             constr_coeff={}
             constr_coeff['fix_reactions']={}
@@ -1915,10 +1915,10 @@ def biomass(product,inputdic,Concretemodel_Need_Data,objvalue2,model,model0):
             constr_coeff['product_constrain']=(inputdic['product'],cond*0.9)
             obj_target = 'minimize'
             obj_name = inputdic['biomass']
-            EcoECM_FBA_protainmodel=FBA_template2(set_obj_sum_e=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-            Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-            totalE2=EcoECM_FBA_protainmodel.obj()
-            print(EcoECM_FBA_protainmodel.obj())
+            EcoECM_FBA_proteinmodel=FBA_template2(set_obj_sum_e=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+            Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+            totalE2=EcoECM_FBA_proteinmodel.obj()
+            print(EcoECM_FBA_proteinmodel.obj())
             #带入totalE求product
             constr_coeff = {}
             constr_coeff['fix_reactions'] = {}
@@ -1927,14 +1927,14 @@ def biomass(product,inputdic,Concretemodel_Need_Data,objvalue2,model,model0):
             constr_coeff['substrate_constrain'] = (inputdic['substrate'],objvalue2)
             constr_coeff['fix_reactions'][inputdic['product']] =  [cond*0.95,np.inf]
             obj_target='maximize'
-            EcoECM_FBA_protainmodel_max = FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-            Model_Solve(EcoECM_FBA_protainmodel_max,'gurobi')
-            biomass_max = EcoECM_FBA_protainmodel_max.obj()
-            print(EcoECM_FBA_protainmodel_max.obj())
+            EcoECM_FBA_proteinmodel_max = FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=inputdic['mode'],constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+            Model_Solve(EcoECM_FBA_proteinmodel_max,'gurobi')
+            biomass_max = EcoECM_FBA_proteinmodel_max.obj()
+            print(EcoECM_FBA_proteinmodel_max.obj())
 
-            e1={x: value(EcoECM_FBA_protainmodel_max.e1[x]) for x in EcoECM_FBA_protainmodel_max.e1}
+            e1={x: value(EcoECM_FBA_proteinmodel_max.e1[x]) for x in EcoECM_FBA_proteinmodel_max.e1}
             model_e1_solution = pd.DataFrame(list(e1.items()), columns=['gene', 'e1'])
-            reaction_dict = {x: value(EcoECM_FBA_protainmodel_max.reaction[x]) for x in EcoECM_FBA_protainmodel_max.reaction}
+            reaction_dict = {x: value(EcoECM_FBA_proteinmodel_max.reaction[x]) for x in EcoECM_FBA_proteinmodel_max.reaction}
             kcat_dict=Concretemodel_Need_Data['kcat_dict']
             kcat_dict={key:value for key,value in kcat_dict.items()if key in reaction_dict}
             model_reaction_solution = pd.DataFrame(list(reaction_dict.items()), columns=['reaction', 'flux'])
@@ -1970,24 +1970,24 @@ def biomass(product,inputdic,Concretemodel_Need_Data,objvalue2,model,model0):
             constr_coeff['fix_reactions'][inputdic['product']] =  [cond*0.95,np.inf]
             obj_target='maximize'
 
-            EcoECM_FBA_protainmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=mode,constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-            Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-            print(EcoECM_FBA_protainmodel.obj())
-            constr_coeff['fix_reactions'][inputdic['biomass']]=[value(EcoECM_FBA_protainmodel.reaction[inputdic['biomass']]*0.9),np.inf]
-            EcoECM_FBA_protainmodel_B2=FBA_template2(set_obj_B_value=True,obj_name=obj_name,obj_target=obj_target,mode=mode,constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-            Model_Solve(EcoECM_FBA_protainmodel_B2,'gurobi')
-            B_value2=EcoECM_FBA_protainmodel_B2.obj()
-            print(EcoECM_FBA_protainmodel.obj())
+            EcoECM_FBA_proteinmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=mode,constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+            Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+            print(EcoECM_FBA_proteinmodel.obj())
+            constr_coeff['fix_reactions'][inputdic['biomass']]=[value(EcoECM_FBA_proteinmodel.reaction[inputdic['biomass']]*0.9),np.inf]
+            EcoECM_FBA_proteinmodel_B2=FBA_template2(set_obj_B_value=True,obj_name=obj_name,obj_target=obj_target,mode=mode,constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+            Model_Solve(EcoECM_FBA_proteinmodel_B2,'gurobi')
+            B_value2=EcoECM_FBA_proteinmodel_B2.obj()
+            print(EcoECM_FBA_proteinmodel.obj())
             constr_coeff={}
             constr_coeff['fix_reactions']={}
             Concretemodel_Need_Data['B_value']=B_value2
             # constr_coeff['biomass_constrain']=('EX_lys_L_e',cond*0.1)
             constr_coeff['substrate_constrain']=(inputdic['substrate'],objvalue2)
             constr_coeff['fix_reactions'][inputdic['product']] =  [cond*0.99,np.inf]
-            EcoECM_FBA_protainmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=mode,constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-            Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-            biomass=EcoECM_FBA_protainmodel.obj()
-            print(EcoECM_FBA_protainmodel.obj())
+            EcoECM_FBA_proteinmodel=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=mode,constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+            Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+            biomass=EcoECM_FBA_proteinmodel.obj()
+            print(EcoECM_FBA_proteinmodel.obj())
             constr_coeff={}
             constr_coeff['fix_reactions']={}
             constr_coeff['fix_reactions'][inputdic['biomass']]=[biomass*0.9,np.inf]
@@ -1995,10 +1995,10 @@ def biomass(product,inputdic,Concretemodel_Need_Data,objvalue2,model,model0):
             constr_coeff['fix_reactions'][inputdic['product']] =  [cond*0.9,np.inf]
             obj_target='minimize'
             obj_name=inputdic['biomass']
-            EcoECM_FBA_protainmodel=FBA_template2(set_obj_sum_e=True,obj_name=obj_name,obj_target=obj_target,mode=mode,constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-            Model_Solve(EcoECM_FBA_protainmodel,'gurobi')
-            totalE2=EcoECM_FBA_protainmodel.obj()
-            print(EcoECM_FBA_protainmodel.obj())
+            EcoECM_FBA_proteinmodel=FBA_template2(set_obj_sum_e=True,obj_name=obj_name,obj_target=obj_target,mode=mode,constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+            Model_Solve(EcoECM_FBA_proteinmodel,'gurobi')
+            totalE2=EcoECM_FBA_proteinmodel.obj()
+            print(EcoECM_FBA_proteinmodel.obj())
 
             constr_coeff={}
             constr_coeff['fix_reactions']={}
@@ -2010,13 +2010,13 @@ def biomass(product,inputdic,Concretemodel_Need_Data,objvalue2,model,model0):
             constr_coeff['fix_reactions'][inputdic['product']] = [cond*0.95,np.inf]
             # constr_coeff['biomass_constrain']=('EX_lys_L_e',cond*0.1)
             obj_target='maximize'
-            EcoECM_FBA_protainmodel_max=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=mode,constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
-            Model_Solve(EcoECM_FBA_protainmodel_max,'gurobi')
-            biomass_max=EcoECM_FBA_protainmodel_max.obj()
-            print(EcoECM_FBA_protainmodel_max.obj())   
-            e1={x: value(EcoECM_FBA_protainmodel_max.e1[x]) for x in EcoECM_FBA_protainmodel_max.e1}
+            EcoECM_FBA_proteinmodel_max=FBA_template2(set_obj_value=True,obj_name=obj_name,obj_target=obj_target,mode=mode,constr_coeff=constr_coeff,Concretemodel_Need_Data=Concretemodel_Need_Data)
+            Model_Solve(EcoECM_FBA_proteinmodel_max,'gurobi')
+            biomass_max=EcoECM_FBA_proteinmodel_max.obj()
+            print(EcoECM_FBA_proteinmodel_max.obj())   
+            e1={x: value(EcoECM_FBA_proteinmodel_max.e1[x]) for x in EcoECM_FBA_proteinmodel_max.e1}
             model_e1_solution = pd.DataFrame(list(e1.items()), columns=['gene', 'e1'])
-            reaction_dict = {x: value(EcoECM_FBA_protainmodel_max.reaction[x]) for x in EcoECM_FBA_protainmodel_max.reaction}
+            reaction_dict = {x: value(EcoECM_FBA_proteinmodel_max.reaction[x]) for x in EcoECM_FBA_proteinmodel_max.reaction}
             kcat_dict=Concretemodel_Need_Data['kcat_dict']
             kcat_dict={key:value for key,value in kcat_dict.items()if key in reaction_dict}
             model_reaction_solution = pd.DataFrame(list(reaction_dict.items()), columns=['reaction', 'flux'])
@@ -2092,19 +2092,16 @@ def calculate_sum(row, column_name):
 
 
 def detail(FSEOFdf):
+    # determine the manipulation strategies for targets based on trend of enzyme concentration change. 
     columns = FSEOFdf.columns
     sorted_columns = sorted(columns, key=lambda x: get_sort_key(x, FSEOFdf))
-    # 使用排序后的列名重新构建 DataFrame
     sorted_FSEOFdf = FSEOFdf[sorted_columns]
     FSEOFdf = FSEOFdf.copy()
     FSEOFdf.loc[:, 'manipulations'] = FSEOFdf.apply(lambda row: check_monotonicity(row), axis=1)
 
     # FSEOFdf['manipulations'] = FSEOFdf.apply(lambda row: check_monotonicity(row), axis=1)
-    # 列名列表
     column_names = FSEOFdf.columns
-    # 遍历列名，为每一列创建一个新列来存储括号内数值的总和
     for column_name in column_names:
-        # 使用正则表达式提取数值部分
         match = re.search(r'(\d+\.\d+)', column_name)
         
         if match:
